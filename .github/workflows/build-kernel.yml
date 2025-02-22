@@ -157,69 +157,16 @@ jobs:
         else
           make -j$(nproc --all) CC=clang O=out KCFLAGS="-Wno-error -fPIC" ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
          fi
+    - name: Compress output
+      run: | 
+        tar czf ~/output.tar.gz $GITHUB_WORKSPACE/kernel_workspace/android-kernel/out/arch/${{env.ARCH}}
   
-
-    - name: Checking the kernel compilation product
-      run: |
-       cd $GITHUB_WORKSPACE/kernel_workspace
-       if [ -f android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }} ]; then
-           echo "CHECK_FILE_IS_OK=true" >> $GITHUB_ENV
-       else
-           echo "Kernel output file is empty or broken."
-           exit 1
-       fi
-       if [ ${{ env.NEED_DTBO }} = true ]; then
-           if [ -f android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img ]; then
-               echo "CHECK_DTBO_IS_OK=true" >> $GITHUB_ENV
-           else
-               echo "DTBO image is empty or broken."
-               exit 1
-           fi
-       fi
-  
-    - name: Setting up AnyKernel3
-      if: env.CHECK_FILE_IS_OK == 'true'
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        git clone https://github.com/osm0sis/AnyKernel3.git
-        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' AnyKernel3/anykernel.sh
-        sed -i 's!block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!block=auto;!g' AnyKernel3/anykernel.sh
-        sed -i 's/is_slot_device=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
-        cp android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }} AnyKernel3/
-        if [ ${{ env.CHECK_DTBO_IS_OK }} = true ]; then
-            cp android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img AnyKernel3/
-        fi
-        cd ./AnyKernel3/
-        zip -r AnyKernel3 . -x ".git*" -x "README.md" -x "*.zip"
-        if [ -f ./AnyKernel3.zip ]; then
-           echo "AK3_IS_OK=true" >> $GITHUB_ENV
-        else
-           echo "AnyKernel3 output file is empty or broken."
-           exit 1
-        fi
-
-    - name: Upload ${{env.KERNEL_IMAGE_NAME}}
-      if: env.CHECK_FILE_IS_OK == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.KERNEL_IMAGE_NAME }}${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }}
-        retention-days: 7  # Optional, adjust retention days if needed
-
-    - name: Upload AnyKernel3
-      if: env.CHECK_FILE_IS_OK == 'true' && env.AK3_IS_OK == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: AnyKernel3${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/AnyKernel3/AnyKernel3.zip
-        retention-days: 7  # Optional, adjust retention days if needed
-
-    - name: Upload DTBO image
+    - name: Upload output
       if: env.CHECK_DTBO_IS_OK == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: dtbo-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img
+        name: output.tar.gz
+        path: ~/output.tar.gz
         retention-days: 7  # Optional, adjust retention days if needed
         
     - name: Release
