@@ -163,7 +163,6 @@ jobs:
         tar czfv output.tar.gz out/
   
     - name: Upload output
-      if: env.CHECK_DTBO_IS_OK == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: output.tar.gz
