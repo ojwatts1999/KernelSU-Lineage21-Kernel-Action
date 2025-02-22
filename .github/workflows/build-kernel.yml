@@ -159,14 +159,15 @@ jobs:
          fi
     - name: Compress output
       run: | 
-        tar czf ~/output.tar.gz $GITHUB_WORKSPACE/kernel_workspace/android-kernel/out/arch/${{env.ARCH}}
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        tar czf output.tar.gz out/
   
     - name: Upload output
       if: env.CHECK_DTBO_IS_OK == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: output.tar.gz
-        path: ~/output.tar.gz
+        path: $GITHUB_WORKSPACE/kernel_workspace/android-kernel/output.tar.gz
         retention-days: 7  # Optional, adjust retention days if needed
         
     - name: Release
