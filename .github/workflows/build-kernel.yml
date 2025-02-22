@@ -160,7 +160,7 @@ jobs:
     - name: Compress output
       run: | 
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        tar czf output.tar.gz out/
+        tar czfv output.tar.gz out/
   
     - name: Upload output
       if: env.CHECK_DTBO_IS_OK == 'true'
