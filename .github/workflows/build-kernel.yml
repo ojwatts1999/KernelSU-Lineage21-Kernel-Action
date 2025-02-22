@@ -145,11 +145,11 @@ jobs:
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang/bin:$PATH
         export KBUILD_BUILD_HOST=${{ env.BUILDER_HOST }}
         export KBUILD_BUILD_USER=$(echo ${{ github.actor }} | tr A-Z a-z)
-         make -j$(nproc --all) CC=clang O=out ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }} ${{ env.GCC_64 }} ${{ env.GCC_32 }} ${{ env.KERNEL_CONFIG }}
+         make -j$(nproc --all) CC=clang O=out ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }} ${{ env.KERNEL_CONFIG }}
         if [ ${{ env.ENABLE_CCACHE }} = true ]; then
-          make -j$(nproc --all) CC="ccache clang" O=out ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
+          make -j$(nproc --all) CC="ccache clang" KCFLAGS="-Wno-error" O=out ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
         else
-          make -j$(nproc --all) CC=clang O=out ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
+          make -j$(nproc --all) CC=clang O=out KCFLAGS="-Wno-error" ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
          fi
   
 
@@ -192,37 +192,6 @@ jobs:
            exit 1
         fi
 
-    - name: Setting up KernelSU boot image
-      if: env.HAVE_KERNELSU_SOURCE_BOOT_IMAGE == 'true' && env.CHECK_FILE_IS_OK == 'true'
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        chmod +x ./tools/magiskboot
-        cd bootimg_tmp
-        mkdir source kernelbuild
-        cd source
-        $GITHUB_WORKSPACE/kernel_workspace/tools/magiskboot unpack ${{env.SOURCE_KERNELSU_BOOTIMG_PATH}}
-        cd ..
-        cp -r ./source ./new
-        if [ ${{ env.KERNEL_IMAGE_NAME }} = Image.gz-dtb ]; then
-          cd $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/kernelbuild
-          $GITHUB_WORKSPACE/kernel_workspace/tools/magiskboot split $GITHUB_WORKSPACE/kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }}
-          cp -rf kernel $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/new/
-          cp -rf kernel_dtb $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/new/
-          cd $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/new/
-          $GITHUB_WORKSPACE/kernel_workspace/tools/magiskboot repack ${{env.SOURCE_KERNELSU_BOOTIMG_PATH}} $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/boot-kernelsu.img
-        else
-          cd $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/new/
-          cp -rf $GITHUB_WORKSPACE/kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }} ./kernel
-          $GITHUB_WORKSPACE/kernel_workspace/tools/magiskboot repack ${{env.SOURCE_KERNELSU_BOOTIMG_PATH}} $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp/boot-kernelsu.img
-        fi
-        cd $GITHUB_WORKSPACE/kernel_workspace/bootimg_tmp
-        if [ -f boot-kernelsu.img ]; then
-            echo "MAKE_KERNELSU_BOOT_IMAGE_IS_OK=true" >> $GITHUB_ENV
-        else
-            echo "KernelSU Boot image is broken."
-            exit 1
-        fi
-
     - name: Upload ${{env.KERNEL_IMAGE_NAME}}
       if: env.CHECK_FILE_IS_OK == 'true'
       uses: actions/upload-artifact@v4
@@ -246,15 +215,7 @@ jobs:
         name: dtbo-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
         path: kernel_workspace/android-kernel/out/arch/${{ env.ARCH }}/boot/dtbo.img
         retention-days: 7  # Optional, adjust retention days if needed
-
-    - name: Upload KernelSU boot image
-      if: env.MAKE_KERNELSU_BOOT_IMAGE_IS_OK == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: boot${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/bootimg_tmp/boot-kernelsu.img
-        retention-days: 7  # Optional, adjust retention days if needed
-
+        
     - name: Release
       uses: softprops/action-gh-release@master
       if: github.event.inputs.release == 'true'
