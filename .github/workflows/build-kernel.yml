@@ -157,18 +157,19 @@ jobs:
         else
           make -j$(nproc --all) CC=clang O=out KCFLAGS="-Wno-error -fPIC" ARCH=${{ env.ARCH }} ${{ env.TC_CUSTOM_CMDS }} ${{ env.EXTRA_CMDS }}
          fi
+         
     - name: Compress output
       run: | 
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        tar czfv ~/output.tar.gz out/
-  
+        tar czfv output.tar.gz out/
+
     - name: Upload output
       uses: actions/upload-artifact@v4
       with:
         name: output.tar.gz
-        path: ${{ runner.home }}/output.tar.gz
+        path: $GITHUB_WORKSPACE/kernel_workspace/android-kernel/output.tar.gz
         retention-days: 7  # Optional, adjust retention days if needed
-        
+    
     - name: Release
       uses: softprops/action-gh-release@master
       if: github.event.inputs.release == 'true'
