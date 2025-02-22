@@ -65,7 +65,7 @@ jobs:
         swap-size-gb: 10
 
     - name: Download AOSP Clang
-      if: env.ENABLE_CLANG == 'true' && env.USE_AOSP_CLANG == 'true' && env.USE_CUSTOM_CLANG == 'false'
+      if: env.USE_AOSP_CLANG == 'true' && env.USE_CUSTOM_CLANG == 'false'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         mkdir clang
@@ -74,7 +74,7 @@ jobs:
         rm -rf clang-${{ env.AOSP_CLANG_VERSION }}.tar.gz
 
     - name: Download Custom Clang
-      if: env.ENABLE_CLANG == 'true' && env.USE_AOSP_CLANG == 'false' && env.USE_CUSTOM_CLANG == 'true'
+      if: env.USE_AOSP_CLANG == 'false' && env.USE_CUSTOM_CLANG == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         if [[ ${{ env.CUSTOM_CLANG_SOURCE }} =~ git ]]; then
