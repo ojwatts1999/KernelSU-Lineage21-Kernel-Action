@@ -190,7 +190,7 @@ jobs:
             mkdir android-kernel
             tar -C android-kernel/ -zxvf android-kernel.tar.gz
           else
-            git clone ${{ env.KERNEL_SOURCE }} -b ${{ env.KERNEL_SOURCE_BRANCH }} android-kernel --depth=1
+            git clone ${{ env.KERNEL_SOURCE }} -b ${{ env.KERNEL_SOURCE_BRANCH }} android-kernel --depth=1 --recurse-submodules
           fi        
         else
           wget -O android-kernel.zip ${{ env.KERNEL_SOURCE }}
