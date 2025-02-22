@@ -50,6 +50,7 @@ jobs:
         echo "BUILDER_HOST=$(cat $CONFIG_ENV | grep -w "BUILDER_HOST" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
         echo "TC_CUSTOM_CMDS=$(cat $CONFIG_ENV | grep -w "TC_CUSTOM_CMDS" | head -n 1 | cut -d ":" -f 2)" >> $GITHUB_ENV
         echo "EXTRA_CMDS=$(cat $CONFIG_ENV | grep -w "EXTRA_CMDS" | head -n 1 | cut -d ":" -f 2)" >> $GITHUB_ENV
+        echo "INJECT_KSUNEXT=$(cat $CONFIG_ENV | grep -w "INJECT_KSUNEXT" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
 
     - name: Setting up the kernel compilation environment
       run: |
@@ -131,6 +132,11 @@ jobs:
         if [ ${{ env.ADD_OVERLAYFS_CONFIG }} = true ]; then
             echo "CONFIG_OVERLAY_FS=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
+    - name: Inject KernelSU Next
+      if: env.INJECT_KSUNEXT == 'true'
+      run : |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -
 
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
@@ -171,7 +177,7 @@ jobs:
            fi
        fi
   
-    - name: Setting up AnyKenrel3
+    - name: Setting up AnyKernel3
       if: env.CHECK_FILE_IS_OK == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
